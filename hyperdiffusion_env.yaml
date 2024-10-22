@@ -1,4 +1,4 @@
-name: hyper-diffusion
+name: hd
 channels:
   - pytorch
   - nvidia
