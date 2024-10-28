@@ -1,0 +1,1 @@
+python siren/experiment_scripts//test_sdf.py --checkpoint_path=./logs/plan1/occ_10155655850468db78d106ce0a280f87_jitter_0_model_final.pth --experiment_name=plan1_ply2
