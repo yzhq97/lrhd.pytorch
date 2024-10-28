@@ -1,0 +1,46 @@
+input_type: "mesh"
+output_type: "occ" # or sdf or occ
+in_out: False
+augment_on_the_fly: False
+mesh_jitter: False
+# dataset_folder: "./data/02691156"
+dataset_folder: "../siren/data/ShapeNetCore_v2_xyz/02691156/train"
+wandb_dir: .
+batch_size: 2048
+lr: 1e-4
+model_type: mlp_3d
+bayesian: False
+logging_root: './logs'
+shape_modify: 'no'
+exp_name: "plan2_lora_rank16_lr1e4_freezebias_modetrue_step_epoch3000"
+steps_til_summary: 100
+epochs_til_ckpt: 1
+hidden_features: 128
+kl_weight: 0
+epochs: 3000
+scheduler:
+  type: step
+  step_size: 200
+  gamma: 0.5
+  min_lr: 1e-6
+  patience: 10000
+  patience_adaptive: 100
+  factor: 0.1
+  threshold: 0
+multi_process:
+  enabled: False
+  part_id: 0
+  n_of_parts: 4
+  first_weights_name:
+  ignore_first: False
+n_points: 2048
+is_meta: True
+strategy: first_weights
+clip_grad: False
+out_act: sigmoid
+mlp_config:
+  out_size: 1
+  use_leaky_relu: False
+  hidden_neurons: [128, 128, 128]
+  multires: 4
+  move: False
