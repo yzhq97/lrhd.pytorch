@@ -30,7 +30,7 @@ def create_mesh_v2(
     world_to_mc_grid[2, 2] = N / 2
     world_to_mc_grid[:3, 3] = N / 2
     decoder.eval()
-
+    
     voxel_origin = [0, 0, 0]
     voxel_size = 1.0 / N
     print("voxel_size", voxel_size)
@@ -155,8 +155,13 @@ def create_mesh(
     decoder.eval()
 
     # NOTE: the voxel_origin is actually the (bottom, left, down) corner, not the middle
-    voxel_origin = [-0.5] * 3
-    voxel_size = -2 * voxel_origin[0] / (N - 1)
+    
+    # voxel_origin = [-0.5] * 3
+    # voxel_size = -2 * voxel_origin[0] / (N - 1)
+
+
+    voxel_origin = [-1, -1, -1]
+    voxel_size = 2.0 / (N - 1)
 
     overall_index = torch.arange(0, N**3, 1, out=torch.LongTensor())
     samples = torch.zeros(N**3, 4)
@@ -194,6 +199,7 @@ def create_mesh(
         )
         head += max_batch
 
+    
     sdf_values = samples[:, 3]
     sdf_values = sdf_values.reshape(N, N, N)
     end = time.time()

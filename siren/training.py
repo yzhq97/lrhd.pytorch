@@ -115,6 +115,7 @@ def train(
                     optim.step(closure)
 
                 model_output = model(model_input)
+                
                 losses = loss_fn(model_output, gt, model)
 
                 train_loss = 0.0

@@ -27,7 +27,8 @@ from scipy.spatial.transform import Rotation
 from torch.utils.data import DataLoader
 
 from hd_utils import render_mesh
-from mlp_models import MLP3D, MLP2D
+# from mlp_models import MLP3D, MLP2D  ## TODO
+from mlp_models_lora import MLP3D, MLP2D  ## TODO
 from siren import dataio, loss_functions, sdf_meshing, training, utils
 from siren.experiment_scripts.test_sdf import SDFDecoder
 
@@ -71,6 +72,7 @@ def main(cfg: DictConfig):
         for file in os.listdir(cfg.dataset_folder)
         if file not in ["train_split.lst", "test_split.lst", "val_split.lst"]
     ]
+    files = sorted(files)
     if multip_cfg.enabled:
         if multip_cfg.ignore_first:
             files = files[1:]  # Ignoring the first one
@@ -89,32 +91,40 @@ def main(cfg: DictConfig):
     lengths = []
     names = []
     train_object_names = np.genfromtxt(
-        os.path.join(cfg.dataset_folder, "train_split.lst"), dtype="str"
+        # os.path.join(cfg.dataset_folder, "train_split.lst"), dtype="str"
+        os.path.join("./data/02691156", "train_split.lst"), dtype="str"
     )
     train_object_names = set(train_object_names)
-    for i, file in enumerate(files):
+    for i, file in enumerate(files[1:]):
+        print('--------- start fitting %s ---------- ' % file)
         # We used to have mesh jittering for augmentation but not using it anymore
         for j in range(10 if mesh_jitter and i > 0 else 1):
             # Quick workaround to rename from obj to off
             # if file.endswith(".obj"):
             #     file = file[:-3] + "off"
-
-            if not (file in train_object_names):
+            
+            if not (file.replace('.xyz', '.obj') in train_object_names):
                 print(f"File {file} not in train_split")
                 continue
 
             filename = file.split(".")[0]
             filename = f"{filename}_jitter_{j}"
 
+            # sdf_dataset = dataio.PointCloud(
+            #     os.path.join(cfg.dataset_folder, file),
+            #     on_surface_points=cfg.batch_size,
+            #     is_mesh=True,
+            #     output_type=cfg.output_type,
+            #     out_act=cfg.out_act,
+            #     n_points=cfg.n_points,
+            #     cfg=cfg,
+            # )
+
             sdf_dataset = dataio.PointCloud(
                 os.path.join(cfg.dataset_folder, file),
                 on_surface_points=cfg.batch_size,
-                is_mesh=True,
-                output_type=cfg.output_type,
-                out_act=cfg.out_act,
-                n_points=cfg.n_points,
-                cfg=cfg,
             )
+            
             dataloader = DataLoader(
                 sdf_dataset, shuffle=True, batch_size=1, pin_memory=True, num_workers=0
             )
@@ -132,9 +142,10 @@ def main(cfg: DictConfig):
             loss_fn = loss_functions.sdf
             if cfg.output_type == "occ":
                 loss_fn = (
-                    loss_functions.occ_tanh
-                    if cfg.out_act == "tanh"
-                    else loss_functions.occ_sigmoid
+                    # loss_functions.occ_tanh
+                    # if cfg.out_act == "tanh"
+                    # else loss_functions.occ_sigmoid
+                    loss_functions.sdf
                 )
             loss_fn = partial(loss_fn, cfg=cfg)
             summary_fn = utils.wandb_sdf_summary
@@ -186,6 +197,7 @@ def main(cfg: DictConfig):
                 filename=filename,
                 cfg=cfg,
             )
+            
             if (
                 i == 0
                 and first_state_dict is None
@@ -217,7 +229,7 @@ def main(cfg: DictConfig):
             print(var.shape, torch.var(tmp))
 
             # For the first 5 data, outputting shapes
-            if i < 5:
+            if i < 1:
                 sdf_decoder = SDFDecoder(
                     cfg.model_type,
                     checkpoint_path,
@@ -264,6 +276,8 @@ def main(cfg: DictConfig):
                         if cfg.output_type == "occ" and cfg.out_act == "sigmoid"
                         else 0,
                     )
+        if file.replace('.xyz', '.obj') in train_object_names:
+            sys.exit()
 
 
 if __name__ == "__main__":

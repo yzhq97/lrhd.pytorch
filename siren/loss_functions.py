@@ -315,6 +315,12 @@ def occ_sigmoid(model_output, gt, model, cfg=None, first_state_dict=None):
             "kl_weight": cfg.kl_weight * kl_loss,
         }
     else:
+        # print('pred_sdf max', pred_sdf.max())
+        # print('pred_sdf min', pred_sdf.min())
+
+        # print('gt_sdf max', gt_sdf.max())
+        # print('gt_sdf min', gt_sdf.min())
+        
         loss = F.binary_cross_entropy_with_logits(
             pred_sdf.squeeze(-1), gt_sdf.squeeze(-1), reduction="none"
         )
@@ -323,46 +329,72 @@ def occ_sigmoid(model_output, gt, model, cfg=None, first_state_dict=None):
         return {"occupancy": loss.sum(-1).mean()}
 
 
-def occ_tanh(model_output, gt, model):
+def occ_tanh(model_output, gt, model, cfg=None, first_state_dict=None):
     gt_sdf = gt["sdf"]
     pred_sdf = model_output["model_out"]
     # kl_loss_fn = torchbnn.BKLLoss(reduction='mean', last_layer_only=False)
     # kl_loss = kl_loss_fn(model)
     return {"occupancy": F.mse_loss(pred_sdf, gt_sdf)}  # , 'kl_weights': 0.1 * kl_loss}
 
-
 def sdf(model_output, gt, model, cfg=None):
-    """
-    x: batch of input coordinates
-    y: usually the output of the trial_soln function
-    """
-    gt_sdf = gt["sdf"]
-    gt_normals = gt["normals"]
-    # kl_loss_fn = torchbnn.BKLLoss(reduction='mean', last_layer_only=False)
-    coords = model_output["model_in"]
-    pred_sdf = model_output["model_out"]
+    '''
+       x: batch of input coordinates
+       y: usually the output of the trial_soln function
+       '''
+    gt_sdf = gt['sdf']
+    gt_normals = gt['normals']
+
+    coords = model_output['model_in']
+    pred_sdf = model_output['model_out']
 
     gradient = diff_operators.gradient(pred_sdf, coords)
+
     # Wherever boundary_values is not equal to zero, we interpret it as a boundary constraint.
     sdf_constraint = torch.where(gt_sdf != -1, pred_sdf, torch.zeros_like(pred_sdf))
-    inter_constraint = torch.where(
-        gt_sdf != -1, torch.zeros_like(pred_sdf), torch.exp(-1e2 * torch.abs(pred_sdf))
-    )
-    normal_constraint = torch.where(
-        gt_sdf != -1,
-        1 - F.cosine_similarity(gradient, gt_normals, dim=-1)[..., None],
-        torch.zeros_like(gradient[..., :1]),
-    )
+    inter_constraint = torch.where(gt_sdf != -1, torch.zeros_like(pred_sdf), torch.exp(-1e2 * torch.abs(pred_sdf)))
+    normal_constraint = torch.where(gt_sdf != -1, 1 - F.cosine_similarity(gradient, gt_normals, dim=-1)[..., None],
+                                    torch.zeros_like(gradient[..., :1]))
     grad_constraint = torch.abs(gradient.norm(dim=-1) - 1)
-    # kl_loss = kl_loss_fn(model)
     # Exp      # Lapl
     # -----------------
-    return {
-        "sdf": torch.abs(sdf_constraint).mean() * 3e3,  # 1e4      # 3e3
-        "inter": inter_constraint.mean() * 1e2,  # 1e2                   # 1e3
-        "normal_constraint": normal_constraint.mean() * 1e2,  # 1e2
-        "grad_constraint": grad_constraint.mean() * 5e1,
-    }  # 1e1      # 5e1
+    return {'sdf': torch.abs(sdf_constraint).mean() * 3e3,  # 1e4      # 3e3
+            'inter': inter_constraint.mean() * 1e2,  # 1e2                   # 1e3
+            'normal_constraint': normal_constraint.mean() * 1e2,  # 1e2
+            'grad_constraint': grad_constraint.mean() * 5e1}  # 1e1      # 5e1
+
+
+# def sdf(model_output, gt, model, cfg=None):
+#     """
+#     x: batch of input coordinates
+#     y: usually the output of the trial_soln function
+#     """
+#     gt_sdf = gt["sdf"]
+#     gt_normals = gt["normals"]
+#     # kl_loss_fn = torchbnn.BKLLoss(reduction='mean', last_layer_only=False)
+#     coords = model_output["model_in"]
+#     pred_sdf = model_output["model_out"]
+
+#     gradient = diff_operators.gradient(pred_sdf, coords)
+#     # Wherever boundary_values is not equal to zero, we interpret it as a boundary constraint.
+#     sdf_constraint = torch.where(gt_sdf != -1, pred_sdf, torch.zeros_like(pred_sdf))
+#     inter_constraint = torch.where(
+#         gt_sdf != -1, torch.zeros_like(pred_sdf), torch.exp(-1e2 * torch.abs(pred_sdf))
+#     )
+#     normal_constraint = torch.where(
+#         gt_sdf != -1,
+#         1 - F.cosine_similarity(gradient, gt_normals, dim=-1)[..., None],
+#         torch.zeros_like(gradient[..., :1]),
+#     )
+#     grad_constraint = torch.abs(gradient.norm(dim=-1) - 1)
+#     # kl_loss = kl_loss_fn(model)
+#     # Exp      # Lapl
+#     # -----------------
+#     return {
+#         "sdf": torch.abs(sdf_constraint).mean() * 3e3,  # 1e4      # 3e3
+#         "inter": inter_constraint.mean() * 1e2,  # 1e2                   # 1e3
+#         "normal_constraint": normal_constraint.mean() * 1e2,  # 1e2
+#         "grad_constraint": grad_constraint.mean() * 5e1,
+#     }  # 1e1      # 5e1
 
 
 # inter = 3e3 for ReLU-PE

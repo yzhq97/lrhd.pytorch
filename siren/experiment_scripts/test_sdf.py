@@ -5,16 +5,18 @@
 import os
 import sys
 from pathlib import Path
-
-from mlp_models import MLP3D
+import hydra
+from omegaconf import DictConfig, open_dict
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 )
 
-import torch
 
+import torch
+# from mlp_models import MLP3D  # TODO
+from mlp_models_lora import MLP3D  # TODO
 from siren import sdf_meshing, utils
 
 
@@ -23,18 +25,32 @@ class SDFDecoder(torch.nn.Module):
         super().__init__()
         # Define the model.
         if model_type == "mlp_3d":
-            if "mlp_config" in cfg:
-                self.model = MLP3D(**cfg.mlp_config)
+            if cfg is not None:
+                if "mlp_config" in cfg:
+                    self.model = MLP3D(**cfg.mlp_config)
+                else:
+                    self.model = MLP3D(**cfg)
             else:
-                self.model = MLP3D(**cfg)
+                self.model = MLP3D (
+                out_size=1,
+                use_leaky_relu=False,
+                hidden_neurons=[128, 128, 128],
+                multires=4,
+                move=False,
+                output_type='occ',
+                )
+
 
         if checkpoint_path is not None:
             self.model.load_state_dict(torch.load(checkpoint_path))
+            print('load checkpoint from %s' % checkpoint_path)
         self.model.cuda()
 
     def forward(self, coords):
         model_in = {"coords": coords}
         return self.model(model_in)["model_out"]
+
+
 
 
 def main():
@@ -68,23 +84,23 @@ def main():
     p.add_argument(
         "--model_type",
         type=str,
-        default="sine",
+        default="mlp_3d",
         help='Options are "sine" (all sine activations) and "mixed" (first layer sine, other layers tanh)',
     )
     p.add_argument(
         "--mode", type=str, default="mlp", help='Options are "mlp" or "nerf"'
     )
-    p.add_argument("--resolution", type=int, default=1600)
+    p.add_argument("--resolution", type=int, default=256)
 
     opt = p.parse_args()
 
-    sdf_decoder = SDFDecoder(opt.model_type, opt.checkpoint_path, opt.mode)
+    sdf_decoder = SDFDecoder(opt.model_type, opt.checkpoint_path, opt.mode, cfg=None)
     name = Path(opt.checkpoint_path).stem
     root_path = os.path.join(opt.logging_root, opt.experiment_name)
     utils.cond_mkdir(root_path)
 
     sdf_meshing.create_mesh(
-        sdf_decoder, os.path.join(root_path, name), N=opt.resolution
+        sdf_decoder, os.path.join(root_path, name), N=opt.resolution, time_val=-1
     )
 
 
