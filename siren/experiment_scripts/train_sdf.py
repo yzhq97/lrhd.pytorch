@@ -101,7 +101,7 @@ def main(cfg: DictConfig):
             # if file.endswith(".obj"):
             #     file = file[:-3] + "off"
 
-            if not (file[:-4] in train_object_names):
+            if not (file in train_object_names):
                 print(f"File {file} not in train_split")
                 continue
 
