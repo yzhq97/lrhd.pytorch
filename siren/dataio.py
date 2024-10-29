@@ -501,6 +501,119 @@ class PointCloud(Dataset):
         self.vertices = None
         self.faces = None
         self.move = cfg.mlp_config.move
+        assert self.move == False
+        self.cfg = cfg
+        if is_mesh:
+            if cfg.strategy == "save_pc":
+                obj: trimesh.Trimesh = trimesh.load(path)
+                vertices = obj.vertices
+                vertices -= np.mean(vertices, axis=0, keepdims=True)
+                v_max = np.amax(vertices)
+                v_min = np.amin(vertices)
+                vertices *= 0.5 * 0.95 / (max(abs(v_min), abs(v_max)))
+                obj.vertices = vertices
+                self.obj = obj
+                total_points = cfg.n_points  # 100000
+                n_points_uniform = total_points  # int(total_points * 0.5)
+                n_points_surface = total_points  # total_points
+
+                points_uniform = np.random.uniform(
+                    -0.5, 0.5, size=(n_points_uniform, 3)
+                )
+                points_surface = obj.sample(n_points_surface)
+                points_surface += 0.01 * np.random.randn(n_points_surface, 3)
+                points = np.concatenate([points_surface, points_uniform], axis=0)
+
+                inside_surface_values = igl.fast_winding_number_for_meshes(
+                    obj.vertices, obj.faces, points
+                )
+                thresh = 0.5
+                occupancies_winding = np.piecewise(
+                    inside_surface_values,
+                    [inside_surface_values < thresh, inside_surface_values >= thresh],
+                    [0, 1],
+                )
+                occupancies = occupancies_winding[..., None]
+                print(points.shape, occupancies.shape, occupancies.sum())
+                point_cloud = points
+                point_cloud = np.hstack((point_cloud, occupancies))
+                print(point_cloud.shape, points.shape, occupancies.shape)
+
+        else:
+            point_cloud = np.genfromtxt(path)
+        print("Finished loading point cloud")
+        if not cfg.in_out:
+            pc_folder = os.path.dirname(path) + "_" + str(cfg.n_points) + "_pc"
+        else:
+            pc_folder = (
+                os.path.dirname(path)
+                + "_"
+                + str(cfg.n_points)
+                + "_pc_"
+                + f"{self.output_type}_in_out_{str(cfg.in_out)}"
+            )
+
+        self.total_time = 16
+
+        if cfg.strategy == "save_pc":
+            self.coords = point_cloud[:, :3]
+            self.normals = point_cloud[:, 3:]
+
+            point_cloud_xyz = np.hstack((self.coords, self.normals))
+            os.makedirs(pc_folder, exist_ok=True)
+            np.save(os.path.join(pc_folder, os.path.basename(path)), point_cloud_xyz)
+        else:
+            point_cloud = np.load(
+                os.path.join(pc_folder, os.path.basename(path) + ".npy")
+            )
+            self.coords = point_cloud[:, :3]
+            self.occupancies = point_cloud[:, 3]
+
+        if cfg.shape_modify == "half":
+            included_points = self.coords[:, 0] < 0
+            self.coords = self.coords[included_points]
+            self.normals = self.normals[included_points]
+
+        self.on_surface_points = on_surface_points
+
+    def __len__(self):
+        if self.move:
+            return self.coords[0].shape[0] // self.on_surface_points
+        return self.coords.shape[0] // self.on_surface_points
+
+    def __getitem__(self, idx):
+
+        length = self.coords.shape[0]
+        idx_size = self.on_surface_points
+        idx = np.random.randint(length, size=idx_size)
+
+        coords = self.coords[idx]
+        occs = self.occupancies[idx, None]
+
+        return {"coords": torch.from_numpy(coords).float()}, {
+            "sdf": torch.from_numpy(occs)
+        }
+
+
+class PointCloud_(Dataset):
+    def __init__(
+        self,
+        path,
+        on_surface_points,
+        keep_aspect_ratio=True,
+        is_mesh=True,
+        output_type="occ",
+        out_act="sigmoid",
+        n_points=200000,
+        cfg=None,
+    ):
+        super().__init__()
+        self.output_type = output_type
+        self.out_act = out_act
+        print("Loading point cloud for ", path)
+        self.vertices = None
+        self.faces = None
+        self.move = cfg.mlp_config.move
         self.cfg = cfg
         if is_mesh:
             if cfg.strategy == "save_pc":
