@@ -101,9 +101,9 @@ def main(cfg: DictConfig):
             # if file.endswith(".obj"):
             #     file = file[:-3] + "off"
 
-            if not (file in train_object_names):
-                print(f"File {file} not in train_split")
-                continue
+            # if not (file in train_object_names):
+            #     print(f"File {file} not in train_split")
+            #     continue
 
             filename = file.split(".")[0]
             filename = f"{filename}_jitter_{j}"
