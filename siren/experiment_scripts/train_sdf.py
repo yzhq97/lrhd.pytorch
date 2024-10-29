@@ -93,6 +93,7 @@ def main(cfg: DictConfig):
     )
     train_object_names = set(train_object_names)
     for i, file in enumerate(files):
+        print(f"current file {file}")
         # We used to have mesh jittering for augmentation but not using it anymore
         for j in range(10 if mesh_jitter and i > 0 else 1):
             # Quick workaround to rename from obj to off
