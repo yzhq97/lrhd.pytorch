@@ -27,7 +27,7 @@ from scipy.spatial.transform import Rotation
 from torch.utils.data import DataLoader
 
 from hd_utils import render_mesh
-from mlp_models import MLP3D, MLP2D
+from mlp_models import MLP3D, MLP2D, MLP3DLoRA
 from siren import dataio, loss_functions, sdf_meshing, training, utils
 from siren.experiment_scripts.test_sdf import SDFDecoder
 
@@ -37,6 +37,8 @@ def get_model(cfg):
         model = MLP3D(**cfg.mlp_config)
     elif cfg.model_type == "mlp_2d":
         model = MLP2D(**cfg.mlp_config)
+    elif cfg.model_type == "mlp_3d_lora":
+        model = MLP3DLoRA(**cfg.mlp_config)
     nparameters = sum(p.numel() for p in model.parameters())
     print(model)
     print("Total number of parameters: %d" % nparameters)
