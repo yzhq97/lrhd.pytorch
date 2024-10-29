@@ -56,6 +56,7 @@ def main(cfg: DictConfig):
         config=dict(cfg),
         mode="online",
     )
+    print("finished wanb init")
     first_state_dict = None
     if cfg.strategy == "same_init":
         first_state_dict = get_model(cfg).state_dict()
