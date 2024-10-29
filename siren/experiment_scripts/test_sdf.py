@@ -11,7 +11,7 @@ sys.path.append(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 )
 
-from mlp_models import MLP3D
+from mlp_models import MLP3D, MLP3DLoRA
 import torch
 
 from siren import sdf_meshing, utils
@@ -26,6 +26,11 @@ class SDFDecoder(torch.nn.Module):
                 self.model = MLP3D(**cfg.mlp_config)
             else:
                 self.model = MLP3D(**cfg)
+        elif model_type == "mlp_3d_lora":
+            if "mlp_config" in cfg:
+                self.model = MLP3DLoRA(**cfg.mlp_config)
+            else:
+                self.model = MLP3DLoRA(**cfg)
 
         if checkpoint_path is not None:
             self.model.load_state_dict(torch.load(checkpoint_path))

@@ -281,9 +281,9 @@ class MLP3DLoRA(nn.Module):
 
         if self.init_pissa:
             for layer in self.layers:
-                print(layer.weight.shape, layer.lora_A.shape, layer.lora_B.shape)
+                # print(layer.weight.shape, layer.lora_A.shape, layer.lora_B.shape)
                 w_b_init, w_a_init, w_res = get_pissa_weights(layer.weight, self.lora_rank)
-                print(w_res.shape, w_a_init.shape, w_b_init.shape)
+                # print(w_res.shape, w_a_init.shape, w_b_init.shape)
                 layer.lora_A.copy_(w_a_init)
                 layer.lora_B.copy_(w_b_init)
                 layer.weight.copy_(w_res)
