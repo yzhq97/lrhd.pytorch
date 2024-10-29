@@ -54,7 +54,7 @@ def main(cfg: DictConfig):
         project="hyperdiffusion_overfitting",
         dir=cfg.wandb_dir,
         config=dict(cfg),
-        mode="online",
+        # mode="online",
     )
     print("finished wanb init")
     first_state_dict = None
