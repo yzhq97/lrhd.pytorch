@@ -6,13 +6,12 @@ import os
 import sys
 from pathlib import Path
 
-from mlp_models import MLP3D
-
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 )
 
+from mlp_models import MLP3D
 import torch
 
 from siren import sdf_meshing, utils
