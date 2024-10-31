@@ -7,6 +7,7 @@ import sys
 import argparse
 import yaml
 from pathlib import Path
+from easydict import EasyDict
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(
@@ -79,8 +80,8 @@ def main():
     p.add_argument("--resolution", type=int, default=1600)
 
     opt = p.parse_args()
-
     cfg = yaml.load(open(opt.config_filepath), Loader=yaml.FullLoader)
+    cfg = EasyDict(cfg)
 
     sdf_decoder = SDFDecoder(cfg.model_type, opt.checkpoint_path, opt.mode, cfg)
     name = Path(opt.checkpoint_path).stem
