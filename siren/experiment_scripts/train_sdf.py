@@ -1,5 +1,6 @@
 """Reproduces Sec. 4.2 in main paper and Sec. 4 in Supplement.
 """
+import time
 import copy
 import os
 os.environ["WANDB__SERVICE_WAIT"] = "300"
@@ -55,6 +56,7 @@ def get_model(cfg):
 def main(cfg: DictConfig):
     wandb.init(
         project="hyperdiffusion_overfitting",
+        name=cfg.experiment_name + "_" + time.strftime("%m%d%H%M%S"),
         dir=cfg.wandb_dir,
         config=dict(cfg),
         # mode="online",
