@@ -81,9 +81,8 @@ def main():
     opt = p.parse_args()
 
     cfg = yaml.load(open(opt.config_filepath), Loader=yaml.FullLoader)
-    print(cfg)
 
-    sdf_decoder = SDFDecoder(opt.model_type, opt.checkpoint_path, opt.mode, cfg)
+    sdf_decoder = SDFDecoder(cfg.model_type, opt.checkpoint_path, opt.mode, cfg)
     name = Path(opt.checkpoint_path).stem
     root_path = os.path.join(opt.logging_root, opt.experiment_name)
     utils.cond_mkdir(root_path)
