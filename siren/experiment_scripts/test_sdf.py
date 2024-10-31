@@ -37,6 +37,8 @@ class SDFDecoder(torch.nn.Module):
 
         if checkpoint_path is not None:
             self.model.load_state_dict(torch.load(checkpoint_path))
+            print("loaded checkpoint {}".format(checkpoint_path))
+
         self.model.cuda()
 
     def forward(self, coords):
