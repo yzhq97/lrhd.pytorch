@@ -218,7 +218,7 @@ def get_pissa_weights(weight, lora_rank):
     w_res = U[:, lora_rank:] @ S_residual @ VH[lora_rank:, :]
 
     w_recon = w_res + w_a_init @ w_b_init
-    print(torch.abs(weight - w_recon).mean())
+    print(f"pissa init: reconstructed weights error {torch.abs(weight - w_recon).mean().item()}")
 
     return w_a_init, w_b_init, w_res
 

@@ -4,6 +4,8 @@
 # Enable import from parent package
 import os
 import sys
+import argparse
+import yaml
 from pathlib import Path
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -42,9 +44,8 @@ class SDFDecoder(torch.nn.Module):
 
 
 def main():
-    import configargparse
 
-    p = configargparse.ArgumentParser()
+    p = argparse.ArgumentParser()
     p.add(
         "-c",
         "--config_filepath",
@@ -82,7 +83,10 @@ def main():
 
     opt = p.parse_args()
 
-    sdf_decoder = SDFDecoder(opt.model_type, opt.checkpoint_path, opt.mode)
+    cfg = yaml.load(open(opt.config_filepath), Loader=yaml.FullLoader)
+    print(cfg)
+
+    sdf_decoder = SDFDecoder(opt.model_type, opt.checkpoint_path, opt.mode, cfg)
     name = Path(opt.checkpoint_path).stem
     root_path = os.path.join(opt.logging_root, opt.experiment_name)
     utils.cond_mkdir(root_path)

@@ -2,6 +2,7 @@
 """
 import copy
 import os
+os.environ["WANDB__SERVICE_WAIT"] = "300"
 # Enable import from parent package
 import sys
 from functools import partial
