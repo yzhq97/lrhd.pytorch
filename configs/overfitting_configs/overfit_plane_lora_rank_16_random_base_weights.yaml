@@ -11,7 +11,7 @@ model_type: mlp_3d_lora
 bayesian: False
 logging_root: './logs'
 shape_modify: 'no'
-exp_name: "lora_rank=8_random_base_weights"
+exp_name: "lora_rank=16_random_base_weights"
 steps_til_summary: 100
 epochs_til_ckpt: 1
 hidden_features: 128
