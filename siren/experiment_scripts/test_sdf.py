@@ -46,12 +46,9 @@ class SDFDecoder(torch.nn.Module):
 def main():
 
     p = argparse.ArgumentParser()
-    p.add(
+    p.add_argument(
         "-c",
         "--config_filepath",
-        required=False,
-        is_config_file=True,
-        help="Path to config file.",
     )
 
     p.add_argument(
